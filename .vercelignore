@@ -1,0 +1,8 @@
+# Exclude heavy raw folders from Vercel deployment (images/ is used instead)
+Фото навчальних (екзаменаційних) препаратів О.М.Грабового/
+Фото навчальних (екзаменаційних) препаратів С.І.Савосько/
+
+# Exclude python build scripts and source documents
+*.py
+*.docx
+*.ini

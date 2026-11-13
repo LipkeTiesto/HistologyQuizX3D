@@ -1,0 +1,22 @@
+{
+  "name": "histology-quiz-app",
+  "version": "1.0.0",
+  "description": "Interactive Histology Quiz Application with 3 Training Modes",
+  "main": "index.html",
+  "scripts": {
+    "dev": "serve .",
+    "start": "serve ."
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  },
+  "keywords": [
+    "histology",
+    "medical-education",
+    "quiz",
+    "interactive-microscopy",
+    "vercel"
+  ],
+  "author": "Department of Histology",
+  "license": "MIT"
+}

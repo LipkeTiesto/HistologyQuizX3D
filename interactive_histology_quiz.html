@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Інтерактивний тренажер з гістології | Кафедра гістології та ембріології</title>
+    <style>
+        :root {
+            --primary: #1a56db;
+            --primary-hover: #1e429f;
+            --success: #057a55;
+            --danger: #e02424;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 24px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 920px;
+            margin: 0 auto;
+        }
+        header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            color: white;
+            padding: 28px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        header h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+        }
+        header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 14.5px;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        select, button {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+            background: white;
+            color: var(--text-main);
+        }
+        button.primary-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        button.primary-btn:hover {
+            background: var(--primary-hover);
+        }
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 14px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .quiz-card {
+            background: var(--card-bg);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: transform 0.2s ease;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .badge-system {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+        .badge-source {
+            background: #fef3c7;
+            color: #92400e;
+            margin-left: 6px;
+        }
+        .slide-ref {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            background: #f1f5f9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+        .question-text {
+            font-size: 16.5px;
+            font-weight: 600;
+            margin-bottom: 18px;
+            color: #0f172a;
+        }
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .option-item {
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1.5px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            background: #ffffff;
+        }
+        .option-item:hover:not(.disabled) {
+            border-color: var(--primary);
+            background: #f0f7ff;
+        }
+        .option-item.correct {
+            border-color: var(--success) !important;
+            background: #edfcf2 !important;
+            color: #03543f;
+            font-weight: 600;
+        }
+        .option-item.incorrect {
+            border-color: var(--danger) !important;
+            background: #fdf2f2 !important;
+            color: #9b1c1c;
+        }
+        .option-letter {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+            font-weight: 600;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .explanation-box {
+            display: none;
+            padding: 16px 20px;
+            border-radius: 10px;
+            background: #f8fafc;
+            border-left: 4px solid var(--primary);
+            font-size: 14.5px;
+            line-height: 1.6;
+            margin-top: 14px;
+        }
+        .explanation-box.visible {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .distractors-box {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed #cbd5e1;
+            font-size: 13.5px;
+            color: #475569;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔬 Інтерактивний медичний тренажер з гістології, цитології та ембріології</h1>
+            <p>Питання, діагностичні критерії, методи забарвлення та клінічні кореляції за навчальними препаратами О.М. Грабового та С.І. Савосько</p>
+        </header>
+
+        <div class="controls">
+            <select id="systemFilter" onchange="filterQuestions()">
+                <option value="all">Усі розділи / системи (All Modules)</option>
+                <option value="cytology">Цитологія та органели (Cytology & Organelles)</option>
+                <option value="embryology">Ембріологія (Embryology)</option>
+                <option value="epithelium">Епітеліальні тканини та шкіра (Epithelium & Skin)</option>
+                <option value="connective">Сполучні, хрящові та кісткові тканини (Connective & Skeletal)</option>
+                <option value="muscle">М'язові тканини (Muscle Tissues)</option>
+                <option value="nervous">Нервова система, рецептори та аналізатори (Nervous & Senses)</option>
+                <option value="hematology">Кров та органи імуногенезу (Blood & Lymphoid)</option>
+                <option value="cardiovascular">Серцево-судинна система (Cardiovascular)</option>
+                <option value="digestive">Травна система та зуби (Digestive & Teeth)</option>
+                <option value="endocrine">Ендокринна система (Endocrine System)</option>
+                <option value="respiratory">Дихальна система (Respiratory System)</option>
+                <option value="urinary">Сечовидільна система (Urinary System)</option>
+                <option value="reproductive">Статева система (Reproductive System)</option>
+            </select>
+            <select id="sourceFilter" onchange="filterQuestions()">
+                <option value="all">Усі колекції препаратів (All Folders)</option>
+                <option value="grabovyi">Препарати О.М. Грабового</option>
+                <option value="savosko">Препарати С.І. Савосько</option>
+            </select>
+            <button class="primary-btn" onclick="resetQuiz()">Скинути відповіді (Reset)</button>
+        </div>
+
+        <div class="stats-bar">
+            <div>Питань: <span id="totalCount">0</span></div>
+            <div>Пройдено: <span id="answeredCount">0</span></div>
+            <div>Правильних: <span id="correctCount" style="color: var(--success); font-weight: bold;">0</span></div>
+            <div>Точність: <span id="scorePct">0%</span></div>
+        </div>
+
+        <div id="quizContainer"></div>
+    </div>
+
+    <script src="quiz_data.js"></script>
+    <script>
+        let answeredQuestions = {};
+
+        function renderQuiz() {
+            const container = document.getElementById('quizContainer');
+            const sysFilter = document.getElementById('systemFilter').value;
+            const srcFilter = document.getElementById('sourceFilter').value;
+
+            const filtered = quizQuestions.filter(q => {
+                const matchSys = (sysFilter === 'all' || q.system === sysFilter);
+                const matchSrc = (srcFilter === 'all' || q.source === srcFilter || q.source === 'both');
+                return matchSys && matchSrc;
+            });
+
+            document.getElementById('totalCount').innerText = filtered.length;
+            container.innerHTML = '';
+
+            filtered.forEach((q, idx) => {
+                const card = document.createElement('div');
+                card.className = 'quiz-card';
+                card.id = `qcard-${q.id}`;
+
+                let optionsHtml = '';
+                q.options.forEach((opt, oIdx) => {
+                    const letter = String.fromCharCode(65 + oIdx);
+                    optionsHtml += `
+                        <div class="option-item" id="opt-${q.id}-${oIdx}" onclick="selectOption(${q.id}, ${oIdx})">
+                            <div class="option-letter">${letter}</div>
+                            <div class="option-label">${opt}</div>
+                        </div>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <span class="badge badge-system">${q.systemName}</span>
+                    <span class="badge badge-source">📁 ${q.sourceName}</span>
+                    <div class="slide-ref">📷 <b>Мікропрепарат:</b> ${q.slideFile} <br>🎨 <b>Забарвлення:</b> ${q.stain}</div>
+                    <div class="question-text"><b>${idx + 1}.</b> ${q.question}</div>
+                    <div class="options-list">${optionsHtml}</div>
+                    <div class="explanation-box" id="expl-${q.id}">
+                        <div><b>Правильна відповідь:</b> <span style="color: var(--success); font-weight: bold;">${String.fromCharCode(65 + q.correctIndex)}. ${q.options[q.correctIndex]}</span></div>
+                        <p style="margin: 8px 0;">${q.explanation}</p>
+                        <div class="distractors-box">
+                            <b>Аналіз дистракторів (чому інші варіанти невірні):</b>
+                            <ul style="margin: 6px 0 0 18px; padding: 0;">
+                                ${q.distractorExplanations.map(d => `<li>${d}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+
+                if (answeredQuestions[q.id] !== undefined) {
+                    applyAnswerUI(q.id, answeredQuestions[q.id]);
+                }
+            });
+            updateStats();
+        }
+
+        function selectOption(qId, selectedIdx) {
+            if (answeredQuestions[qId] !== undefined) return;
+            answeredQuestions[qId] = selectedIdx;
+            applyAnswerUI(qId, selectedIdx);
+            updateStats();
+        }
+
+        function applyAnswerUI(qId, selectedIdx) {
+            const q = quizQuestions.find(item => item.id === qId);
+            if (!q) return;
+
+            const isCorrect = (selectedIdx === q.correctIndex);
+            for (let i = 0; i < q.options.length; i++) {
+                const optEl = document.getElementById(`opt-${qId}-${i}`);
+                if (optEl) {
+                    optEl.classList.add('disabled');
+                    if (i === q.correctIndex) {
+                        optEl.classList.add('correct');
+                    } else if (i === selectedIdx && !isCorrect) {
+                        optEl.classList.add('incorrect');
+                    }
+                }
+            }
+
+            const explBox = document.getElementById(`expl-${qId}`);
+            if (explBox) {
+                explBox.classList.add('visible');
+            }
+        }
+
+        function updateStats() {
+            const answeredIds = Object.keys(answeredQuestions);
+            let correct = 0;
+            answeredIds.forEach(id => {
+                const q = quizQuestions.find(item => item.id == id);
+                if (q && answeredQuestions[id] === q.correctIndex) {
+                    correct++;
+                }
+            });
+            document.getElementById('answeredCount').innerText = answeredIds.length;
+            document.getElementById('correctCount').innerText = correct;
+            const pct = answeredIds.length > 0 ? Math.round((correct / answeredIds.length) * 100) : 0;
+            document.getElementById('scorePct').innerText = `${pct}%`;
+        }
+
+        function filterQuestions() {
+            renderQuiz();
+        }
+
+        function resetQuiz() {
+            answeredQuestions = {};
+            renderQuiz();
+        }
+
+        window.onload = renderQuiz;
+    </script>
+</body>
+</html>
