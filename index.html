@@ -803,13 +803,15 @@
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <select id="selectSystem" class="select-custom" onchange="applyFilters()">
                         <option value="all">Усі системи (All Systems)</option>
-                        <option value="digestive">Травна система та зуби</option>
-                        <option value="nervous">Нервова система та органи чуття</option>
-                        <option value="connective">Сполучні, хрящові та кісткові</option>
-                        <option value="muscle">М'язові тканини</option>
-                        <option value="hematology">Кров та органи імунітету</option>
-                        <option value="cardiovascular">Серцево-судинна система</option>
+                        <option value="cytology">Цитологія та ембріологія</option>
                         <option value="epithelium">Епітелії та шкіра</option>
+                        <option value="connective">Сполучні, хрящові та кісткові</option>
+                        <option value="hematology">Кров та органи імунітету</option>
+                        <option value="muscle">М'язові тканини</option>
+                        <option value="nervous">Нервова система та органи чуття</option>
+                        <option value="cardiovascular">Серцево-судинна система</option>
+                        <option value="respiratory">Дихальна система</option>
+                        <option value="digestive">Травна система та зуби</option>
                         <option value="urinary">Сечовидільна система</option>
                         <option value="endocrine">Ендокринна система</option>
                         <option value="reproductive">Статева система</option>
@@ -1122,18 +1124,45 @@
             const img = document.getElementById('currentImage');
             const rect = img.getBoundingClientRect();
 
-            // Calculate percentage coordinates
+            // Percentage coordinates of click
             const clickX = ((e.clientX - rect.left) / rect.width) * 100;
             const clickY = ((e.clientY - rect.top) / rect.height) * 100;
 
             const slide = filteredSlides[currentSlideIdx];
             const pt = slide.pointing_task;
 
-            const dx = clickX - pt.target_x;
-            const dy = clickY - pt.target_y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
+            // Helper to compute distance with aspect‑ratio correction
+            const aspect = rect.width / rect.height; // >1 means wider than tall
+            const distTo = (cx, cy, r) => {
+                const dx = (clickX - cx) * aspect;
+                const dy = clickY - cy;
+                return Math.sqrt(dx * dx + dy * dy);
+            };
 
-            const isCorrect = (dist <= pt.radius);
+            let isCorrect = false;
+            let bestTarget = {x: pt.target_x, y: pt.target_y, r: pt.radius};
+            let bestDist = distTo(pt.target_x, pt.target_y, pt.radius);
+            // Primary target check
+            if (bestDist <= pt.radius) isCorrect = true;
+
+            // Additional targets (array of {x,y,r})
+            if (Array.isArray(pt.targets)) {
+                for (const t of pt.targets) {
+                    const d = distTo(t.x, t.y, t.r);
+                    if (d <= t.r) isCorrect = true;
+                    if (d < bestDist) { bestDist = d; bestTarget = t; }
+                }
+            }
+
+            // Zone / bounding box check (object {x1,y1,x2,y2})
+            if (pt.zone) {
+                const {x1, y1, x2, y2} = pt.zone;
+                if (clickX >= x1 && clickX <= x2 && clickY >= y1 && clickY <= y2) {
+                    isCorrect = true;
+                    // For visual feedback highlight the valid clicked structure
+                    bestTarget = {x: clickX, y: clickY, r: pt.radius || 15};
+                }
+            }
 
             // Display click marker
             const marker = document.getElementById('tapMarker');
@@ -1143,12 +1172,13 @@
             marker.style.boxShadow = isCorrect ? '0 0 16px var(--success)' : '0 0 16px var(--danger)';
             marker.style.display = 'block';
 
-            // Reveal target ring
+            // Reveal target ring (matches circular distance threshold)
             const ring = document.getElementById('targetGoldRing');
-            ring.style.left = `${pt.target_x}%`;
-            ring.style.top = `${pt.target_y}%`;
-            ring.style.width = `${pt.radius * 2 * (rect.width / 100)}px`;
-            ring.style.height = `${pt.radius * 2 * (rect.height / 100)}px`;
+            ring.style.left = `${bestTarget.x}%`;
+            ring.style.top = `${bestTarget.y}%`;
+            const pixelRadius = (bestTarget.r / 100) * rect.height;
+            ring.style.width = `${pixelRadius * 2}px`;
+            ring.style.height = `${pixelRadius * 2}px`;
             ring.style.borderColor = isCorrect ? 'var(--success)' : 'var(--warning)';
             ring.style.display = 'block';
 
