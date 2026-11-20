@@ -959,6 +959,7 @@
             document.getElementById('slideIndex').innerText = idx + 1;
 
             const slide = filteredSlides[idx];
+            slide._shuffledOptions = null; // Reset to allow fresh shuffle
             const img = document.getElementById('currentImage');
             img.src = encodeURI(slide.file);
             img.onerror = function() {
@@ -989,14 +990,30 @@
             if (!slide) return;
 
             if (currentMode === 1) {
-                // Mode 1: Multiple Choice
+                // Mode 1: Multiple Choice with dynamic shuffling
+                if (!slide._shuffledOptions) {
+                    const indexed = slide.options.map((opt, idx) => ({
+                        text: opt,
+                        isCorrect: (idx === slide.correct_idx),
+                        origIdx: idx
+                    }));
+                    // Fisher-Yates shuffle
+                    for (let i = indexed.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        const temp = indexed[i];
+                        indexed[i] = indexed[j];
+                        indexed[j] = temp;
+                    }
+                    slide._shuffledOptions = indexed;
+                }
+
                 let optionsHtml = '';
-                slide.options.forEach((opt, oIdx) => {
+                slide._shuffledOptions.forEach((item, oIdx) => {
                     const token = String.fromCharCode(65 + oIdx);
                     optionsHtml += `
                         <div class="option-tile" id="optTile-${oIdx}" onclick="handleMCSelect(${oIdx})">
                             <span class="opt-token">${token}</span>
-                            <span>${opt}</span>
+                            <span>${item.text}</span>
                         </div>
                     `;
                 });
@@ -1048,13 +1065,18 @@
         // Mode 1: Multiple choice handler
         function handleMCSelect(selectedIdx) {
             const slide = filteredSlides[currentSlideIdx];
-            const isCorrect = (selectedIdx === slide.correct_idx);
+            const options = slide._shuffledOptions || slide.options.map((opt, idx) => ({
+                text: opt,
+                isCorrect: (idx === slide.correct_idx)
+            }));
 
-            for (let i = 0; i < slide.options.length; i++) {
+            const isCorrect = options[selectedIdx].isCorrect;
+
+            for (let i = 0; i < options.length; i++) {
                 const el = document.getElementById(`optTile-${i}`);
                 if (el) {
                     el.classList.add('disabled');
-                    if (i === slide.correct_idx) el.classList.add('correct');
+                    if (options[i].isCorrect) el.classList.add('correct');
                     else if (i === selectedIdx && !isCorrect) el.classList.add('incorrect');
                 }
             }
